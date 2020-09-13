@@ -10,7 +10,7 @@ OUT_FILE_PATH = '/home/student.unimelb.edu.au/kvarghesemat/PycharmProjects/SML/s
 outfile = open(OUT_FILE_PATH, WRITE)
 
 # Load the word2vec model
-model = Word2Vec.load("/home/student.unimelb.edu.au/kvarghesemat/PycharmProjects/SML/rw2")
+model = Word2Vec.load("/home/student.unimelb.edu.au/kvarghesemat/PycharmProjects/SML/rw.model")
 train_data = open(TRAINING_FILE_PATH, READ)
 
 # None marker, indicates that processing did not happen
@@ -128,7 +128,7 @@ def predict_with_test_data():
         direct_sim = NULL
         source_as_sink_sim = NULL
         sink_as_source_sim = NULL
-        total = 1002
+        total = 100002
 
         # if both source and sink have word vector representations
         if source in model.wv.vocab and sink in model.wv.vocab:
@@ -149,16 +149,16 @@ def predict_with_test_data():
         if source_as_sink_sim == NULL:
             total = total - 1
         if sink_as_source_sim == NULL:
-            print('error')
-            sys.exit(0)
-            total = total - 1000
+            total = total - 100000
 
-        total_probability = max(0, direct_sim) + max(0, source_as_sink_sim) + max(0, sink_as_source_sim) * 1000
+        # total_probability = max(0, direct_sim) + max(0, source_as_sink_sim) + max(0, sink_as_source_sim) * 100000
+
+        total_probability = max(0, sink_as_source_sim)
 
         if total == 0:
             total_probability = 0.1
-        else:
-            total_probability = total_probability / total
+        # else:
+        #    total_probability = total_probability / total
 
         print(direct_sim, ' : ', source_as_sink_sim, ' : ', sink_as_source_sim, ' : ', total_probability)
         outfile.write(str(index) + ',' + str(total_probability) + '\n')
