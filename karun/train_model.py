@@ -9,10 +9,12 @@ READ = "r"
 follows = {}
 unique_ids = set({})
 follow_counts = {}
+# TODO
+random_walk_count = {}
 
 # --------- Hyper-parameters ----------- #
 RANDOM_WALK_LENGTH = 10
-WALKS_PER_NODE = 8000
+WALKS_PER_NODE = 12000
 # -------------------------------------- #
 
 # TODO change the path
@@ -51,6 +53,7 @@ def perform_random_walk(node):
     hops = RANDOM_WALK_LENGTH
     while hops >= 0:
         hops -= 1
+        # continue the walk as long as the sink node is also a source
         if node in follows:
             neighbours = list(follows[node])
             # remove the neighbours already visited
@@ -77,6 +80,7 @@ def get_random_walks():
     # perform random walks for all nodes who follow somebody
     for unique_node in tqdm(unique_nodes):
         if unique_node in follows:
+            # follow_counts[unique_node]
             for index in range(min(WALKS_PER_NODE, follow_counts[unique_node])):
                 random_walks.append(perform_random_walk(unique_node))
 
@@ -94,7 +98,7 @@ def create_and_save_model():
     # model = Word2Vec(alpha=0.03, window=4, sg=1, hs=0,
     #                 negative=10,  min_alpha=0.0007,
     #                 seed=99)
-    model = Word2Vec(alpha=0.03, window=3, sg=1, hs=1,
+    model = Word2Vec(alpha=0.03, window=4, sg=1, hs=1,
                      negative=10, min_alpha=0.0005,
                      seed=99)
     model.build_vocab(random_walks)
