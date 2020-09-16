@@ -25,7 +25,6 @@ source2sink_counts = {}
 
 # compares the similarity of source,
 def get_source_as_sink_similarity(source, sink):
-
     connected_sinks = source2sinks[source]
 
     c_sinks = 0
@@ -40,17 +39,32 @@ def get_source_as_sink_similarity(source, sink):
     # print(c_sinks)
 
     if c_sinks > 0:
-        return total_sim/c_sinks
+        return total_sim / c_sinks
     else:
         return -5
 
 
-def get_sink_as_source_similarity(source, sink):
-
+def get_sink_as_source_similarity(source, sink, index):
     connected_sources = sink2sources[sink]
 
     c_sources = 0
     total_sim = 0
+
+    # get the 10-most nearest neighbours to the source
+    similar_nodes = model.wv.most_similar(positive=[source], topn=200)
+    links_to_sink = 0
+    scores = []
+    for similar_source, similarity_score in similar_nodes:
+        if similar_source in source2sinks and sink in source2sinks[similar_source]:
+            links_to_sink += 1
+            scores.append(similarity_score)
+
+    # max_sim = -1
+    # for connected_source in connected_sources:
+    #     if connected_source in model.wv.vocab:
+    #         temp_score = model.wv.similarity(source, connected_source)
+    #         if temp_score > max_sim:
+    #             max_sim = temp_score
 
     for connected_source in connected_sources:
         if connected_source in model.wv.vocab:
@@ -60,14 +74,22 @@ def get_sink_as_source_similarity(source, sink):
     # print(c_sinks)
 
     if c_sources > 0:
-        return total_sim/c_sources
+        if links_to_sink >= 1:
+            # print('\n')
+            # print('Sink Degree ::', len(sink2sources[sink]))
+            # print(index, ' :: ', source, ' :: ', sink)
+            # print(links_to_sink, ":::", scores)
+            # print((total_sim / c_sources))
+            return max(scores)
+        # return max_sim
+        else:
+            return total_sim / c_sources
     else:
         return NULL
 
 
 # returns a representation for source
 def get_representation_for_source(src):
-
     if src in model.wv.vocab:
         word_vector_rep = model.wv[src]
         # print(word_vector_rep)
@@ -114,7 +136,6 @@ def load_mappings():
 
 
 def predict_with_test_data():
-
     test_data = open(TESTING_FILE_PATH, READ)
     test_data.readline()
     no_match = 0
@@ -125,10 +146,11 @@ def predict_with_test_data():
         index += 1
         data = line.split('\t')
         source, sink = data[1].strip(), data[2].strip()
+
         direct_sim = NULL
         source_as_sink_sim = NULL
         sink_as_source_sim = NULL
-        total = 100002
+        total = 1000002
 
         # if both source and sink have word vector representations
         if source in model.wv.vocab and sink in model.wv.vocab:
@@ -139,7 +161,7 @@ def predict_with_test_data():
             source_as_sink_sim = get_source_as_sink_similarity(source, sink)
 
         if source in model.wv.vocab:
-            sink_as_source_sim = get_sink_as_source_similarity(source, sink)
+            sink_as_source_sim = get_sink_as_source_similarity(source, sink, index)
 
         if direct_sim == NULL and source_as_sink_sim == NULL and sink_as_source_sim == NULL:
             no_match += 1
@@ -149,9 +171,9 @@ def predict_with_test_data():
         if source_as_sink_sim == NULL:
             total = total - 1
         if sink_as_source_sim == NULL:
-            total = total - 100000
+            total = total - 1000000
 
-        # total_probability = max(0, direct_sim) + max(0, source_as_sink_sim) + max(0, sink_as_source_sim) * 100000
+        # total_probability = max(0, direct_sim) + max(0, source_as_sink_sim) + max(0, sink_as_source_sim) * 1000000
 
         total_probability = max(0, sink_as_source_sim)
 
@@ -160,13 +182,12 @@ def predict_with_test_data():
         # else:
         #    total_probability = total_probability / total
 
-        print(direct_sim, ' : ', source_as_sink_sim, ' : ', sink_as_source_sim, ' : ', total_probability)
+        # print(direct_sim, ' : ', source_as_sink_sim, ' : ', sink_as_source_sim, ' : ', total_probability)
         outfile.write(str(index) + ',' + str(total_probability) + '\n')
 
-    print(no_match)
+    print('No Matches :', no_match)
 
 
 load_mappings()
 predict_with_test_data()
 outfile.close()
-
