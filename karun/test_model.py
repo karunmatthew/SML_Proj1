@@ -22,6 +22,9 @@ sink2sources = {}
 source2sinks = {}
 source2sink_counts = {}
 
+highest_normal_score = -3
+lowest_sim_score = 100
+
 
 # compares the similarity of source,
 def get_source_as_sink_similarity(source, sink):
@@ -46,12 +49,14 @@ def get_source_as_sink_similarity(source, sink):
 
 def get_sink_as_source_similarity(source, sink, index):
     connected_sources = sink2sources[sink]
-
+    global highest_normal_score, lowest_sim_score
     c_sources = 0
     total_sim = 0
 
+    closest_to_source = model.wv.most_similar(positive=[source], topn=1)
+
     # get the 10-most nearest neighbours to the source
-    similar_nodes = model.wv.most_similar(positive=[source], topn=200)
+    similar_nodes = model.wv.most_similar(positive=[source], topn=100)
     links_to_sink = 0
     scores = []
     for similar_source, similarity_score in similar_nodes:
@@ -74,16 +79,35 @@ def get_sink_as_source_similarity(source, sink, index):
     # print(c_sinks)
 
     if c_sources > 0:
+
         if links_to_sink >= 1:
-            # print('\n')
-            # print('Sink Degree ::', len(sink2sources[sink]))
-            # print(index, ' :: ', source, ' :: ', sink)
-            # print(links_to_sink, ":::", scores)
-            # print((total_sim / c_sources))
+            #print('\n')
+            #print('Sink Degree   ::', len(sink2sources[sink]))
+            #print('Source Degree ::', len(source2sinks[source]))
+            #print(index, ' :: ', source, ' :: ', sink)
+            #print(links_to_sink, ":::", scores)
+            #print('Closest to source ', closest_to_source)
+            #print(max(scores), ' Rank to Source ', scores.index(max(scores)))
+
+            if max(scores) < lowest_sim_score:
+                lowest_sim_score = max(scores)
+
+            # return ((sum(scores) / len(scores)) * 0.2) + (max(scores) * 0.8)
             return max(scores)
         # return max_sim
         else:
-            return total_sim / c_sources
+            if 0.75 * (total_sim / c_sources) > 0.22:
+                print('\n')
+                print('Sink Degree   ::', len(sink2sources[sink]))
+                print('Source Degree ::', len(source2sinks[source]))
+                print(index, ' :: ', source, ' :: ', sink)
+                print(links_to_sink, ":::", scores)
+                print('Closest to source ', closest_to_source)
+                print('Normal Score :', (total_sim / c_sources))
+
+            if (total_sim / c_sources) > highest_normal_score:
+                highest_normal_score = (total_sim / c_sources)
+            return 0.75 * (total_sim / c_sources)
     else:
         return NULL
 
@@ -190,4 +214,7 @@ def predict_with_test_data():
 
 load_mappings()
 predict_with_test_data()
+
+print('Lsc ', lowest_sim_score)
+print('Hns ', highest_normal_score)
 outfile.close()
